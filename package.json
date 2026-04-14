@@ -1,0 +1,34 @@
+{
+  "name": "mcp-base",
+  "version": "0.0.0",
+  "private": false,
+  "type": "module",
+  "description": "Shared TypeScript foundation for Model Context Protocol (MCP) servers — OAuth + discovery + consent + CORS + access logging in one reusable base.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cable1407/mcp-base.git"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "biome check src test",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.7.2"
+  }
+}

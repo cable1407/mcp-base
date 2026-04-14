@@ -1,0 +1,4 @@
+[test]
+# Placeholder — once tests grow meaningfully in Phase 2, enable coverage here.
+coverage = false
+
