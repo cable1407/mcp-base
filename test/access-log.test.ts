@@ -19,7 +19,7 @@ describe("withAccessLog", () => {
     };
   });
 
-  test("when enabled, prints one line per request with [http] prefix, IP, method, path, status, ms, ua", async () => {
+  test("when enabled, prints one line per request with ISO-8601 UTC timestamp, [http] prefix, IP, method, path, status, ms, ua", async () => {
     const h = withAccessLog({ enabled: true, log }, mkInner(200));
     await h(
       new Request("http://x/mcp", {
@@ -29,11 +29,26 @@ describe("withAccessLog", () => {
     );
     expect(lines).toHaveLength(1);
     const line = lines[0] as string;
-    expect(line.startsWith("[http] ")).toBe(true);
+    // ISO-8601 UTC with millis, then [http] prefix.
+    expect(line).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z \[http\] /);
     expect(line).toContain("203.0.113.7");
     expect(line).toContain("POST /mcp 200");
     expect(line).toMatch(/\d+ms/);
     expect(line).toContain('ua="claude-ai/1.2.3"');
+  });
+
+  test("timestamp is parseable back to a Date within a small delta of 'now'", async () => {
+    const before = Date.now();
+    const h = withAccessLog({ enabled: true, log }, mkInner(200));
+    await h(new Request("http://x/health"));
+    const after = Date.now();
+    const line = lines[0] as string;
+    const ts = line.split(" ")[0] as string;
+    const parsed = Date.parse(ts);
+    expect(Number.isNaN(parsed)).toBe(false);
+    // Allow 1s of slack; the request completes well inside that window.
+    expect(parsed).toBeGreaterThanOrEqual(before - 1000);
+    expect(parsed).toBeLessThanOrEqual(after + 1000);
   });
 
   test("reflects the actual response status code (e.g. 401)", async () => {
@@ -82,7 +97,7 @@ describe("withAccessLog", () => {
     const h = withAccessLog({ enabled: true, log }, mkInner(200));
     await h(new Request("http://x/health"));
     const line = lines[0] as string;
-    expect(line.startsWith("[http] - ")).toBe(true);
+    expect(line).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z \[http\] - /);
   });
 
   test("user-agent defaults to '-' when absent", async () => {

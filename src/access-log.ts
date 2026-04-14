@@ -17,7 +17,9 @@ export function withAccessLog(config: AccessLogConfig, inner: Handler): Handler 
     const elapsed = Math.round(performance.now() - start);
     const ip = clientIp(req);
     const ua = truncateUa(req.headers.get("user-agent"));
-    log(`[http] ${ip} ${req.method} ${url.pathname} ${res.status} ${elapsed}ms ua="${ua}"`);
+    log(
+      `${new Date().toISOString()} [http] ${ip} ${req.method} ${url.pathname} ${res.status} ${elapsed}ms ua="${ua}"`,
+    );
     return res;
   };
 }
