@@ -8,7 +8,9 @@
     "outDir": "dist",
     "rootDir": "src",
     "moduleResolution": "node",
-    "module": "ES2022"
+    "module": "ES2022",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["test/**/*.ts"]

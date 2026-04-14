@@ -1,46 +1,56 @@
-// Phase 1 scaffold — types and the `createMcpServer` entry point are
-// declared here so consumers can import without breakage, but the
-// implementation is extracted from cortex in Phase 2. The stub throws a
-// clear, actionable error so anything that calls it during Phase 1 fails
-// loudly instead of silently.
+/**
+ * mcp-base — shared TypeScript foundation for Model Context Protocol servers.
+ *
+ * Two tiers of public API:
+ *
+ * 1. **Opinionated factory (most consumers):** `createMcpServer({...})` wires
+ *    the full HTTP perimeter in the right order — access log → CORS →
+ *    unified dispatcher (OAuth + /mcp + optional extra routes) → Bun.serve.
+ *    OAuth + consent + discovery + CORS + logging are all handled; the
+ *    consumer supplies `mcpHandler` and (optionally) `extraRoutes` for
+ *    service-specific endpoints.
+ *
+ * 2. **Lower-level primitives (consumers that need custom stacks):** the
+ *    middlewares (`withAccessLog`, `withCors`), handler factories
+ *    (`createOAuthHandler`, `authMiddleware`, `createUnifiedHandler`), stores
+ *    (`FileOAuthStore`, `InMemoryOAuthStore`), path utilities, and HTML
+ *    helpers are exported individually so consumers can compose their own
+ *    top-level handler.
+ *
+ * Consumed as a git dependency (`"mcp-base": "github:cable1407/mcp-base#vX.Y.Z"`),
+ * never published to npm. See the README for the full design.
+ */
 
-export interface OAuthConfig {
-  readonly enabled: boolean;
-  readonly issuer: string;
-  readonly storePath: string;
-  readonly accessTokenTtlSec: number;
-  readonly authPassword: string;
-  readonly clientId?: string;
-  readonly redirectUris?: readonly string[];
-}
-
-export type Handler = (req: Request) => Promise<Response>;
-
-export interface ExtraRoute {
-  readonly method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  readonly path: string;
-  readonly handler: Handler;
-  readonly requireToken?: string;
-  readonly public?: boolean;
-}
-
-export interface McpServerConfig {
-  readonly name: string;
-  readonly port: number;
-  readonly basePath?: string;
-  readonly oauth?: OAuthConfig;
-  readonly accessLog?: boolean;
-  readonly mcpHandler: Handler;
-  readonly extraRoutes?: readonly ExtraRoute[];
-}
-
-export interface McpServer {
-  listen(): void;
-  stop(): Promise<void>;
-}
-
-export async function createMcpServer(_config: McpServerConfig): Promise<McpServer> {
-  throw new Error(
-    "mcp-base: createMcpServer is not implemented — extraction in progress (see cable1407/mcp-base#2)",
-  );
-}
+export { withAccessLog, type AccessLogConfig } from "./access-log.ts";
+export { normalizeBasePath, stripBasePath } from "./base-path.ts";
+export { withCors } from "./cors.ts";
+export {
+  createUnifiedHandler,
+  type Handler,
+  type UnifiedHandlerDeps,
+} from "./dispatcher.ts";
+export { escapeHtml, timingSafeEqualStrings } from "./html.ts";
+export {
+  OAUTH_PATHS,
+  createOAuthHandler,
+  type OAuthHandlerConfig,
+} from "./oauth/endpoints.ts";
+export { FileOAuthStore } from "./oauth/file-store.ts";
+export { authMiddleware, type AuthMiddlewareConfig } from "./oauth/middleware.ts";
+export { verifyPkce, type VerifyPkceArgs } from "./oauth/pkce.ts";
+export { InMemoryOAuthStore } from "./oauth/store.ts";
+export type {
+  AccessToken,
+  AuthorizationCode,
+  CodeChallengeMethod,
+  OAuthClient,
+  OAuthStore,
+  RefreshToken,
+} from "./oauth/types.ts";
+export {
+  createMcpServer,
+  type ExtraRoute,
+  type McpServer,
+  type McpServerConfig,
+  type OAuthConfig,
+} from "./server.ts";
