@@ -93,7 +93,27 @@ Everything else (OAuth stores, middlewares, base-path utilities) is available as
 - `withCors`, `withAccessLog` — middleware if a consumer wants to build its own top-level handler
 - `normalizeBasePath`, `stripBasePath` — path-prefix utilities
 - `escapeHtml`, `timingSafeEqualStrings` — small helpers used across endpoints
+- `createSessionedMcpHandler`, `createStatelessMcpHandler` — MCP HTTP handler factories (see below)
 - Types: `OAuthConfig`, `ExtraRoute`, `McpServerConfig`, `Handler`
+
+### MCP handler modes: sessioned vs stateless
+
+Two factories produce the `mcpHandler` you pass into `createMcpServer`:
+
+- **`createSessionedMcpHandler`** — owns one `(transport, McpServer)` per `Mcp-Session-Id`, with idle eviction + LRU cap. Use when tools keep server-side state between calls (subscriptions, long-lived channels, resource watches).
+
+- **`createStatelessMcpHandler`** — spawns a fresh `(transport, McpServer)` per request, dispatches, closes. No session map, no eviction, no `session_not_found` ever. Use when every tool is a pure function of external state (filesystem, database, search index).
+
+Pick stateless by default for read-mostly tool servers. The sessioned mode has a documented failure mode: clients that cache a session id across a server restart (or past the idle-eviction window) get wedged until they disconnect-and-reconnect — and some clients (notably claude.ai's MCP connector) don't auto-recover. Stateless mode sidesteps the whole category.
+
+```ts
+// Before (v0.2.x):
+const mcpHandler = createSessionedMcpHandler({ createServer });
+// After (v0.3.0+), for read-mostly servers:
+const mcpHandler = createStatelessMcpHandler({ createServer });
+```
+
+Tradeoff: stateless pays a per-request allocation (`McpServer` + transport) that sessioned amortizes across a session's lifetime. Negligible for request volumes under ~1/sec; would matter past ~100/sec.
 
 ## Consumer contract
 
